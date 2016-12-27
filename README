@@ -16,7 +16,7 @@ to hold the primitive data type contents.
 Using libcerializer
 --------------------
 You can either copy directly the libcerializer sources to your project or compile it install it as
-a share library. See the provided example for more details on how to use libcerializer.
+a shared library. See the provided example for more details on how to use libcerializer.
 
 
 Underlying OS architecture.
