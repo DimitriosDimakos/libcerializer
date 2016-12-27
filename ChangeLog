@@ -1,0 +1,7 @@
+version 1.1.0
+---------------------------------------------
+1. Fixed data serialization memory issue in which more
+   than the required memory was allocated
+3. Fixed 64-bit integer value ds-serialization issue.
+3. Added cerializertool to generate convenient source code files
+   for messages desired to be serialized
