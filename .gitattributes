@@ -1,0 +1,9 @@
+aclocal.m4 linguist-vendored
+config.guess linguist-vendored
+config.h.in linguist-language=C
+config.sub linguist-vendored
+configure linguist-vendored
+depcomp linguist-vendored
+install-sh linguist-vendored
+ltmain.sh linguist-vendored
+missing linguist-vendored
