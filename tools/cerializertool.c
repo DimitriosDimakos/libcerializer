@@ -23,7 +23,7 @@
  * containing the c structures as well as convenience
  * functions related to the libcerializer library module.
  *
- * That program uses(source code) of a third party XML parsing
+ * That program uses a third party XML parsing
  * C library: ezXML 0.8.6
  *
  * Example of a cerializer dynamic message definition
@@ -291,7 +291,7 @@ get_c_proper_name(char * user_prov_name) {
 
 /**
  * Function to open standard generated files that will contain the source code for the
- * given message name;
+ * given message name.
  *
  * @param h_fptr header file containing the c structure of the message.
  * @param cv_h_fptr header file that will contain the declaration of convenience
@@ -328,7 +328,7 @@ open_standard_gen_files(FILE **h_fptr, FILE **cv_h_fptr, FILE **cv_c_fptr, char 
 
 /**
  * Function to prepare standard generated files that will contain the source code for the
- * given message name;
+ * given message name.
  *
  * @param h_fptr header file containing the c structure of the message.
  * @param cv_h_fptr header file that will contain the declaration of convenience
@@ -417,12 +417,12 @@ prepare_standard_gen_files(FILE *h_fptr, FILE *cv_h_fptr, FILE *cv_c_fptr, char 
 }
 
 /**
- * Function to generate the implementation source code for the given message name;
+ * Function to generate the implementation source code for the given message name.
  *
  * @param h_fptr header file containing the c structure of the message.
  * @param cv_c_fptrm header file that will contain the implementation of convenience
  *        (de)serialization functions for the message.
- * @param message_info reference to message information structure
+ * @param message_info reference to message information structure.
  */
 static void
 generate_implementation(FILE *h_fptr, FILE *cv_c_fptr, message_info_struct *message_info) {
@@ -554,7 +554,7 @@ generate_implementation(FILE *h_fptr, FILE *cv_c_fptr, message_info_struct *mess
 
 /**
  * Function to finalize standard generated files that will contain the source code for the
- * given message name;
+ * given message name.
  *
  * @param h_fptr header file containing the c structure of the message.
  * @param cv_h_fptr header file that will contain the declaration of convenience
@@ -573,7 +573,7 @@ finalize_standard_gen_files(FILE *h_fptr, FILE *cv_h_fptr, FILE *cv_c_fptr, char
 
 /**
  * Function to close standard generated files that will contain the source code for the
- * message;
+ * message.
  *
  * @param h_fptr header file containing the c structure of the message.
  * @param cv_h_fptr header file that will contain the declaration of convenience
@@ -744,7 +744,7 @@ main(int argc, char ** argv) {
         }
     }
 
-    if (usage_error) { /* if command line arguments not valid print usage*/
+    if (usage_error) { /* if command line arguments not valid print usage */
         print_usage(argv[0]);
     } else {
         if ((f_ptr = fopen(fname_ptr, "r")) == NULL) {
