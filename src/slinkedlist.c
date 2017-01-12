@@ -145,6 +145,7 @@ slinkedlist_contains(slinkedlist *list, void *data) {
  */
 extern void *
 slinkedlist_delete_head(slinkedlist *list) {
+    void *data = NULL;
     slinkedlist_node_t *head = NULL;
     if (!slinkedlist_empty(list)) {
         head = list->head; /* save head's address */
@@ -160,7 +161,9 @@ slinkedlist_delete_head(slinkedlist *list) {
     if (head == NULL) {
         return NULL;
     } else {
-        return head->data;
+        data = head->data;
+        SAFE_FREE(head);
+        return data;
     }
 }
 
@@ -176,6 +179,7 @@ slinkedlist_delete_head(slinkedlist *list) {
  */
 extern void *
 slinkedlist_delete_tail(slinkedlist *list){
+    void *data = NULL;
     slinkedlist_node_t *tail = NULL;
     if (!slinkedlist_empty(list)) {
         slinkedlist_node_t *current_node = list->head;
@@ -204,7 +208,9 @@ slinkedlist_delete_tail(slinkedlist *list){
     if (tail == NULL) {
         return NULL;
     } else {
-        return tail->data;
+    	data = tail->data;
+    	SAFE_FREE(tail);
+        return data;
     }
 }
 
@@ -234,7 +240,7 @@ slinkedlist_delete_data(slinkedlist *list, void *data) {
         }
         result++;/* found a match */
         if (current_node == list->head) {
-            //change first to point to next link
+            /* change first to point to next link */
             list->head = list->head->next;
         } else {
             /* bypass the current link */
@@ -394,4 +400,5 @@ slinkedlist_free(slinkedlist *list, slinkedlist_data_dealloc free_data) {
     }
     list->head = NULL;
     list->tail = NULL;
+    list->size = 0;
 }
