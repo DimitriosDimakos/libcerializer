@@ -169,7 +169,10 @@ hashmap_init(
     hashmap_hash_func hash_func) {
 
     if (map != NULL) {
-        map->capacity = capacity;
+        if ((int)capacity <= 0) {
+        } else {
+            map->capacity = capacity;
+        }
         map->size = 0;
 
         map->table = (slinkedlist **)SAFE_MALLOC(sizeof(slinkedlist *) * map->capacity);
