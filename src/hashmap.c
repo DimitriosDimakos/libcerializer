@@ -41,7 +41,7 @@ hashmap_default_key_equal(const void *l, const void *r) {
 }
 
 /**
- * Default hash function (provided by Bob Jenkins).
+ * Hash function provided by Bob Jenkins.
  *
  * @param key key to hash.
  * @param capacity maximum size of the map.
@@ -49,7 +49,7 @@ hashmap_default_key_equal(const void *l, const void *r) {
  * @return an offset within the range `[0, capacity)`
  */
 static inline size_t
-hashmap_default_hash_func(const void *key, size_t capacity) {
+bob_jenkins_hash_func(const void *key, size_t capacity) {
     size_t a = *((size_t *) key);
     a -= (a<<6);
     a ^= (a>>17);
@@ -60,6 +60,28 @@ hashmap_default_hash_func(const void *key, size_t capacity) {
     a ^= (a>>15);
 
     return a % capacity;
+}
+
+/**
+ * The hash function should calculate a unique hash value
+ * for the provided key.
+ *
+ * @param key key to hash.
+ *
+ * @return Unique hash value of the key.
+ */
+static inline size_t
+default_hash_func(const void *key) {
+    size_t a = *((size_t *) key);
+    a -= (a<<6);
+    a ^= (a>>17);
+    a -= (a<<9);
+    a ^= (a<<4);
+    a -= (a<<3);
+    a ^= (a<<10);
+    a ^= (a>>15);
+
+    return a;
 }
 
 /**
@@ -74,7 +96,7 @@ hashmap_default_hash_func(const void *key, size_t capacity) {
 static int
 hashmap_rehash_required(hashmap *map, void *key) {
     slinkedlist_node_t *it = NULL;
-    size_t offset = map->hash_func(key, map->capacity);
+    size_t offset = map->hash_func(key) % map->capacity;
     size_t new_key_offset;
     size_t present_key_offset;
     slinkedlist *list = map->table[offset];
@@ -83,13 +105,13 @@ hashmap_rehash_required(hashmap *map, void *key) {
         return rehash;
     }
 
-    new_key_offset = map->hash_func(key, 2 * map->capacity);
+    new_key_offset = map->hash_func(key) % (2 * map->capacity);
 
     it = list->head;
     while (it) {
         hashmap_entry *entry = (hashmap_entry *) it->data;
         /* recalculate offset of present keys */
-        present_key_offset = map->hash_func(entry->key, 2 * map->capacity);
+        present_key_offset = map->hash_func(entry->key) % (2 * map->capacity);
         if ((new_key_offset != present_key_offset) && (map->capacity == map->size)) {
             rehash++;
         }
@@ -99,7 +121,7 @@ hashmap_rehash_required(hashmap *map, void *key) {
 }
 
 /**
- * Resize and re-hash the provide has map.
+ * Resize and re-hash the provided hash map.
  *
  * @param map hash map structure.
  * @param capacity desired maximum size of the hash map.
@@ -162,9 +184,25 @@ hashmap_init(
         if (hash_func) {
             map->hash_func = hash_func;
         } else {
-            map->hash_func = hashmap_default_hash_func;
+            map->hash_func = default_hash_func;
         }
     }
+}
+
+/**
+ * Initialize the map with the default hash function.
+ *
+ * @param map hash map structure.
+ * @param capacity maximum size of the hash map.
+ * @param key_equal function to compare keys.
+ */
+extern void
+hashmap_init_default(
+    hashmap *map,
+    size_t capacity,
+    hashmap_key_equal key_equal,
+    hashmap_hash_func hash_func) {
+    hashmap_init(map, capacity, key_equal, default_hash_func);
 }
 
 /**
@@ -246,7 +284,7 @@ hashmap_get(hashmap *map, void *key) {
     if (hashmap_empty(map) || key == NULL) {
         return NULL;
     } else {
-        slinkedlist *list = map->table[map->hash_func(key, map->capacity)];
+        slinkedlist *list = map->table[map->hash_func(key) % map->capacity];
         slinkedlist_node_t *it = NULL;
         if (!list) {
             return NULL;
@@ -370,16 +408,15 @@ hashmap_values(hashmap *map) {
 extern void
 hashmap_put(hashmap *map, void *key, void *value) {
     if (map != NULL && key != NULL) {
-        size_t offset = map->hash_func(key, map->capacity);
-        slinkedlist *list = NULL;
+        size_t offset = map->hash_func(key) % map->capacity;
+        slinkedlist *list =  map->table[offset];;
 
-        list = map->table[offset];
         if (list == NULL) {
             hashmap_entry *entry = NULL;
             /* create a new linked list */
             list = (slinkedlist *)SAFE_MALLOC(sizeof(slinkedlist));
             slinkedlist_init(list);
-            map->table[map->hash_func(key, map->capacity)] = list;
+            map->table[offset] = list;
 
             entry = (hashmap_entry *)SAFE_MALLOC(sizeof(hashmap_entry));
             entry->key = key;
@@ -430,17 +467,16 @@ hashmap_remove(hashmap *map, void *key) {
     if (hashmap_empty(map) || key == NULL) {
         return NULL;
     } else {
-        size_t offset = map->hash_func(key, map->capacity);
-        slinkedlist *list = map->table[offset];
+        slinkedlist *list = map->table[map->hash_func(key) % map->capacity];
         hashmap_entry *del_entry = NULL;
         hashmap_entry *del_entry_data = NULL;
         slinkedlist_node_t *previous_node = NULL;
-        slinkedlist_node_t *current_node = list->head;
+        slinkedlist_node_t *current_node = NULL;
 
         if (!list) {
             return NULL;
         }
-
+        current_node = list->head;
         while (!map->key_equal(((hashmap_entry *) current_node->data)->key, key)) {
             if (current_node->next == NULL) {
                 return NULL;
@@ -487,7 +523,7 @@ hashmap_remove(hashmap *map, void *key) {
 extern int
 hashmap_contains_key(hashmap *map, void *key) {
     if (map != NULL && key != NULL) {
-        slinkedlist *list = map->table[map->hash_func(key, map->capacity)];
+        slinkedlist *list = map->table[map->hash_func(key) % map->capacity];
         slinkedlist_node_t *it = NULL;
         if (!list) {
             return 0;

@@ -40,14 +40,14 @@ extern "C" {
 typedef int (*hashmap_key_equal)(const void *l, const void *r);
 
 /**
- * Hash function.
+ * The hash function should calculate a unique hash value
+ * for the provided key.
  *
  * @param key key to hash.
- * @param capacity maximum size of the map.
  *
- * @return an offset within the range `[0, capacity)`
+ * @return Unique hash value of the key.
  */
-typedef size_t (*hashmap_hash_func)(const void *key, size_t capacity);
+typedef size_t (*hashmap_hash_func)(const void *key);
 
 /**
  * Hash map structure
@@ -85,6 +85,20 @@ typedef struct {
  */
 extern void
 hashmap_init(
+    hashmap *map,
+    size_t capacity,
+    hashmap_key_equal key_equal,
+    hashmap_hash_func hash_func);
+
+/**
+ * Initialize the map with the default hash function.
+ *
+ * @param map hash map structure.
+ * @param capacity maximum size of the hash map.
+ * @param key_equal function to compare keys.
+ */
+extern void
+hashmap_init_default(
     hashmap *map,
     size_t capacity,
     hashmap_key_equal key_equal,
