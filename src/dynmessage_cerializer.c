@@ -257,8 +257,8 @@ dynmessage_deserialize_bin(unsigned char *data, int data_len) {
                   dynmessage_put_uint16_field_value(dyn_message, (char *)field_name, &int_value);
                   break;
               case INT32_TYPE: /* 4 bytes */
-                  int_value = deserialize_int32(field_value_buffer);
-                  dynmessage_put_int32_field_value(dyn_message, (char *)field_name, &int_value);
+                  long_value = deserialize_int32(field_value_buffer);
+                  dynmessage_put_int32_field_value(dyn_message, (char *)field_name, &long_value);
                   break;
               case UNSIGNED_INT32_TYPE: /* 4 bytes */
                   long_value = deserialize_uint32(field_value_buffer);
