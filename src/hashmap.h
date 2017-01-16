@@ -79,7 +79,7 @@ typedef struct {
  * Initialize the map.
  *
  * @param map hash map structure.
- * @param capacity maximum size of the hash map.
+ * @param capacity initial size of the hash map.
  * @param key_equal function to compare keys.
  * @param hash_func hash function.
  */
@@ -94,15 +94,14 @@ hashmap_init(
  * Initialize the map with the default hash function.
  *
  * @param map hash map structure.
- * @param capacity maximum size of the hash map.
+ * @param capacity initial size of the hash map.
  * @param key_equal function to compare keys.
  */
 extern void
 hashmap_init_default(
     hashmap *map,
     size_t capacity,
-    hashmap_key_equal key_equal,
-    hashmap_hash_func hash_func);
+    hashmap_key_equal key_equal);
 
 /**
  * Free the entire map including the linked lists.
