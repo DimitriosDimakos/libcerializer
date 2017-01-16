@@ -96,11 +96,11 @@ default_hash_func(const void *key) {
 static int
 hashmap_rehash_required(hashmap *map, void *key) {
     slinkedlist_node_t *it = NULL;
-    size_t offset = map->hash_func(key) % map->capacity;
     size_t new_key_offset;
     size_t present_key_offset;
-    slinkedlist *list = map->table[offset];
+    slinkedlist *list = map->table[map->hash_func(key) % map->capacity];
     int rehash = 0;
+
     if (list == NULL) {
         return rehash;
     }
@@ -157,7 +157,7 @@ hashmap_rehash(hashmap *map, size_t capacity) {
  * Initialize the map.
  *
  * @param map hash map structure.
- * @param capacity maximum size of the hash map.
+ * @param capacity initial size of the hash map.
  * @param key_equal function to compare keys.
  * @param hash_func hash function.
  */
@@ -169,9 +169,10 @@ hashmap_init(
     hashmap_hash_func hash_func) {
 
     if (map != NULL) {
-        if ((int)capacity <= 0) {
-        } else {
-            map->capacity = capacity;
+        map->capacity = capacity;
+        /* check user provided hash map capacity */
+        if ((int)map->capacity <= 0) {
+            map->capacity = 1;
         }
         map->size = 0;
 
@@ -196,15 +197,14 @@ hashmap_init(
  * Initialize the map with the default hash function.
  *
  * @param map hash map structure.
- * @param capacity maximum size of the hash map.
+ * @param capacity initial size of the hash map.
  * @param key_equal function to compare keys.
  */
 extern void
 hashmap_init_default(
     hashmap *map,
     size_t capacity,
-    hashmap_key_equal key_equal,
-    hashmap_hash_func hash_func) {
+    hashmap_key_equal key_equal) {
     hashmap_init(map, capacity, key_equal, default_hash_func);
 }
 
@@ -412,7 +412,7 @@ extern void
 hashmap_put(hashmap *map, void *key, void *value) {
     if (map != NULL && key != NULL) {
         size_t offset = map->hash_func(key) % map->capacity;
-        slinkedlist *list =  map->table[offset];;
+        slinkedlist *list = map->table[offset];
 
         if (list == NULL) {
             hashmap_entry *entry = NULL;
