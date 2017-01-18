@@ -214,7 +214,6 @@ hashmap_init_default(
  * remains intact(not free'd);
  *
  * @param map hash map structure.
- * @param free_data data de-allocation function.
  */
 extern void
 hashmap_free(hashmap *map) {
