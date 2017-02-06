@@ -23,7 +23,7 @@
  * containing the c structures as well as convenience
  * functions related to the libcerializer library module.
  *
- * That program uses a third party XML parsing
+ * That program uses(source code) of a third party XML parsing
  * C library: ezXML 0.8.6
  *
  * Example of a cerializer dynamic message definition
@@ -58,13 +58,13 @@
 
 #include "ezxml.h"
 
-#define H_SET_FNAME_POST_FIX "_set.h"
+#define H_SET_FNAME_POST_FIX "_set_h"
 #define H_SET_FNAME_POST_FIX_LEN 6
 
-#define CV_H_SET_FNAME_POST_FIX  "_set_c.h"
+#define CV_H_SET_FNAME_POST_FIX  "_set_c_h"
 #define CV_H_SET_FNAME_POST_FIX_LEN 8
 
-#define CV_C_SET_FNAME_POST_FIX  "_set_c.c"
+#define CV_C_SET_FNAME_POST_FIX  "_set_c_c"
 #define CV_C_SET_FNAME_POST_FIX_LEN 8
 
 #ifdef TEST
@@ -291,7 +291,7 @@ get_c_proper_name(char * user_prov_name) {
 
 /**
  * Function to open standard generated files that will contain the source code for the
- * given message name.
+ * given message name;
  *
  * @param h_fptr header file containing the c structure of the message.
  * @param cv_h_fptr header file that will contain the declaration of convenience
@@ -328,7 +328,7 @@ open_standard_gen_files(FILE **h_fptr, FILE **cv_h_fptr, FILE **cv_c_fptr, char 
 
 /**
  * Function to prepare standard generated files that will contain the source code for the
- * given message name.
+ * given message name;
  *
  * @param h_fptr header file containing the c structure of the message.
  * @param cv_h_fptr header file that will contain the declaration of convenience
@@ -363,7 +363,7 @@ prepare_standard_gen_files(FILE *h_fptr, FILE *cv_h_fptr, FILE *cv_c_fptr, char 
     fprintf(cv_h_fptr,
         "\n/**\n"
         " * Convenience function to serialize a %s message object\n"
-        " * into a sequence of bytes.\n"
+        " * into a sequence of bytes(as a dynamicmessage).\n"
         " *\n"
         " * @param object reference to the %s message to serialize(not NULL).\n"
         " * @param serdi reference to the serialized_data_info structure(not NULL)\n"
@@ -373,6 +373,21 @@ prepare_standard_gen_files(FILE *h_fptr, FILE *cv_h_fptr, FILE *cv_c_fptr, char 
         " */\n"
         "extern int\n"
         "c_serialize_%s(%s *object, serialized_data_info *serdi);\n",
+        message_name, message_name, message_name, message_name, message_name);
+
+    fprintf(cv_h_fptr,
+        "\n/**\n"
+        " * Convenience function to deserialize a sequence of bytes representing\n"
+        " * a %s message (as a dynamicmessage).\n"
+        " *\n"
+        " * @param serdi reference to the serialized_data_info structure(not NULL)\n"
+        " *        containing the serialized %s message object.\n"
+        " * @param object reference to the deserialized %s message(not NULL).\n"
+  		" *\n"
+        " * @return Non-zero upon successful de-serialization, zero otherwise.\n"
+        " */\n"
+        "extern int\n"
+        "c_deserialize_%s(serialized_data_info *serdi, %s *object);\n",
         message_name, message_name, message_name, message_name, message_name);
 
     fprintf(cv_h_fptr,
@@ -417,12 +432,12 @@ prepare_standard_gen_files(FILE *h_fptr, FILE *cv_h_fptr, FILE *cv_c_fptr, char 
 }
 
 /**
- * Function to generate the implementation source code for the given message name.
+ * Function to generate the implementation source code for the given message name;
  *
  * @param h_fptr header file containing the c structure of the message.
  * @param cv_c_fptrm header file that will contain the implementation of convenience
  *        (de)serialization functions for the message.
- * @param message_info reference to message information structure.
+ * @param message_info reference to message information structure
  */
 static void
 generate_implementation(FILE *h_fptr, FILE *cv_c_fptr, message_info_struct *message_info) {
@@ -440,7 +455,7 @@ generate_implementation(FILE *h_fptr, FILE *cv_c_fptr, message_info_struct *mess
     fprintf(cv_c_fptr,
         "\n/**\n"
         " * Convenience function to serialize a %s message object\n"
-        " * into a sequence of bytes.\n"
+        " * into a sequence of bytes(as a dynamicmessage).\n"
         " *\n"
         " * @param object reference to the %s message to serialize(not NULL).\n"
         " * @param serdi reference to the serialized_data_info structure(not NULL)\n"
@@ -472,6 +487,39 @@ generate_implementation(FILE *h_fptr, FILE *cv_c_fptr, message_info_struct *mess
 
     fprintf(cv_c_fptr,
         "\n/**\n"
+        " * Convenience function to deserialize sequence of bytes representing\n"
+        " * a %s message (as dynamicmessage).\n"
+        " *\n"
+        " * @param serdi reference to the serialized_data_info structure(not NULL)\n"
+        " *        containing the serialized %s message object.\n"
+        " * @param object reference to the deserialized %s message(not NULL).\n"
+  		" *\n"
+        " * @return Non-zero upon successful de-serialization, zero otherwise.\n"
+        " */\n"
+        "extern int\n"
+        "c_deserialize_%s(serialized_data_info *serdi, %s *object) {\n"
+        "    int result = 0;\n",
+        message_info->message_name,
+        message_info->message_name,
+        message_info->message_name,
+        message_info->message_name,
+        message_info->message_name);
+    fprintf(cv_c_fptr, "    if (object != NULL && edi != NULL) {\n"
+                       "        /* decode data into a dynamicmessage object */\n"
+                       "        dynamicmessage *dm = dynmessage_deserialize_bin(serdi->ser_data, serdi->ser_data_len);\n"
+                       "        if (sm) {\n"
+                       "            /* convert dynamicmessage object to a '%s' object */\n"
+                       "            if (c_conv_dm_2%s(dm, object)) {\n"
+                       "                result++;\n"
+                       "            }\n"
+                       "            dynamicmessage_destroy(sm);\n"
+                       "        }\n"
+                       "    }\n",
+        message_info->message_name, message_info->message_name);
+    fprintf(cv_c_fptr, "    return (result);\n}\n");
+
+    fprintf(cv_c_fptr,
+        "\n/**\n"
         " * Convenience function to convert a %s message object\n"
         " * into a dynamic message object.\n"
         " *\n"
@@ -495,11 +543,11 @@ generate_implementation(FILE *h_fptr, FILE *cv_c_fptr, message_info_struct *mess
         for (i=0; i<message_info->field_count; i++) {
             if (strcmp(message_info->field_types[i], "STRING_TYPE") == 0) {
                 fprintf(cv_c_fptr,
-                    "        if (&object->%s == NULL) {\n            error++;\n        } else {\n",
+                    "        if (object->%s == NULL) {\n            error++;\n        } else {\n",
                 message_info->field_names[i]);
 
                 fprintf(cv_c_fptr,
-                    "            dynmessage_put_field_and_value(dm, \"%s\", %s, &object->%s);\n",
+                    "            dynmessage_put_field_and_value(dm, \"%s\", %s, object->%s);\n",
                     message_info->field_names[i], message_info->field_types[i], message_info->field_names[i]);
                 fprintf(cv_c_fptr, "        }\n");
             } else {
@@ -554,7 +602,7 @@ generate_implementation(FILE *h_fptr, FILE *cv_c_fptr, message_info_struct *mess
 
 /**
  * Function to finalize standard generated files that will contain the source code for the
- * given message name.
+ * given message name;
  *
  * @param h_fptr header file containing the c structure of the message.
  * @param cv_h_fptr header file that will contain the declaration of convenience
@@ -573,7 +621,7 @@ finalize_standard_gen_files(FILE *h_fptr, FILE *cv_h_fptr, FILE *cv_c_fptr, char
 
 /**
  * Function to close standard generated files that will contain the source code for the
- * message.
+ * message;
  *
  * @param h_fptr header file containing the c structure of the message.
  * @param cv_h_fptr header file that will contain the declaration of convenience
@@ -720,7 +768,7 @@ generate_source_set_from_file(FILE * f_ptr) {
 static void
 print_usage(char * tool_name) {
     fprintf(stdout, "usage: %s -f <filename>\n", tool_name);
-    fprintf(stdout, "(version: 1.1.0)\n");
+    fprintf(stdout, "(version: 1.0.1)\n");
 
     exit(1);
 }
@@ -744,7 +792,7 @@ main(int argc, char ** argv) {
         }
     }
 
-    if (usage_error) { /* if command line arguments not valid print usage */
+    if (usage_error) { /* if command line arguments not valid print usage*/
         print_usage(argv[0]);
     } else {
         if ((f_ptr = fopen(fname_ptr, "r")) == NULL) {
