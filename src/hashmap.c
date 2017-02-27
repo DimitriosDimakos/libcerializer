@@ -14,6 +14,10 @@
  * limitations under the License.
  */
 
+/**
+ * Implementation of a hash map based on a single linked list.
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -39,7 +43,7 @@ hashmap_default_key_equal(const void *l, const void *r) {
         return 0;
     }
 }
-
+#if 0
 /**
  * Hash function provided by Bob Jenkins.
  *
@@ -61,7 +65,7 @@ bob_jenkins_hash_func(const void *key, size_t capacity) {
 
     return a % capacity;
 }
-
+#endif
 /**
  * The hash function should calculate a unique hash value
  * for the provided key.

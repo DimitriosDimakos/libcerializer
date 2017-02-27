@@ -14,6 +14,10 @@
  * limitations under the License.
  */
 
+/**
+ * Implementation of a single linked list.
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 
