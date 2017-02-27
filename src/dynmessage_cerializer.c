@@ -210,7 +210,6 @@ dynmessage_deserialize_bin(unsigned char *data, int data_len) {
               short short_value;
               int int_value;
               long long_value;
-              unsigned long ulong_value;
               long long long_long_value;
               unsigned long long ulong_long_value;
               float float_value;
