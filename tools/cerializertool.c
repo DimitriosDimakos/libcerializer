@@ -58,13 +58,13 @@
 
 #include "ezxml.h"
 
-#define H_SET_FNAME_POST_FIX "_set_h"
+#define H_SET_FNAME_POST_FIX "_set.h"
 #define H_SET_FNAME_POST_FIX_LEN 6
 
-#define CV_H_SET_FNAME_POST_FIX  "_set_c_h"
+#define CV_H_SET_FNAME_POST_FIX  "_set_c.h"
 #define CV_H_SET_FNAME_POST_FIX_LEN 8
 
-#define CV_C_SET_FNAME_POST_FIX  "_set_c_c"
+#define CV_C_SET_FNAME_POST_FIX  "_set_c.c"
 #define CV_C_SET_FNAME_POST_FIX_LEN 8
 
 #ifdef TEST
@@ -176,7 +176,7 @@ is_num(char c) {
 
 /**
  * Tests whether a provided reference is null an exits program execution if so,
- * printing on screen  a related error message.
+ * printing on screen a related error message.
  *
  * @param ptr the provided reference to be tested.
  * @param message error message.
@@ -185,7 +185,7 @@ static void
 exit_if_null(void * ptr, char * message) {
     if (ptr == NULL) {
         fprintf(stderr, "[ERROR]: %s\n", message);
-        exit(1);
+        exit(-1);
     }
 }
 
@@ -209,7 +209,7 @@ valid_field_value_type(char * field_value_type) {
 }
 
 /**
- * function to get the c primitive type in textual representation of the provided field value type.
+ * Function to get the c primitive type in textual representation of the provided field value type.
  *
  * @param field_value_type field value type(represented as string).
  * @return c primitive type in textual representation of the provided field value type.
@@ -226,7 +226,7 @@ get_field_value_type_text(char * field_value_type) {
 }
 
 /**
- * function to get the c primitive type union value in textual representation
+ * Function to get the c primitive type union value in textual representation
  * of the provided field value type.
  *
  * @param field_value_type field value type(represented as string).
@@ -251,7 +251,7 @@ get_field_value_type_union_text(char * field_value_type) {
  * name. If there are issues, this function shall try to resolve
  * them.
  *
- * @param user_prov_name name of the name provided by the user
+ * @param user_prov_name name of the name provided by the user.
  *
  * @return the proper name for the c element.
  */
@@ -277,7 +277,7 @@ get_c_proper_name(char * user_prov_name) {
         } else {
             if (is_alpha(user_prov_name[i]) || is_num(user_prov_name[i])
                 || user_prov_name[i] == '_' || user_prov_name[i] == ' ') {
-                if (user_prov_name[i] == ' ') {
+                if (user_prov_name[i] == ' ') { /* replace spaces with underscores */
                     proper_name[j++] = '_';
                 } else {
                     proper_name[j++] = user_prov_name[i];
@@ -291,12 +291,12 @@ get_c_proper_name(char * user_prov_name) {
 
 /**
  * Function to open standard generated files that will contain the source code for the
- * given message name;
+ * given message name.
  *
  * @param h_fptr header file containing the c structure of the message.
  * @param cv_h_fptr header file that will contain the declaration of convenience
  *        (de)serialization functions for the message.
- * @param cv_c_fptrm header file that will contain the implementation of convenience
+ * @param cv_c_fptr header file that will contain the implementation of convenience
  *        (de)serialization functions for the message.
  * @param message_name name of the message.
  */
@@ -314,26 +314,26 @@ open_standard_gen_files(FILE **h_fptr, FILE **cv_h_fptr, FILE **cv_c_fptr, char 
 
     if ((*h_fptr = fopen(h_fname, "w+")) == NULL) {
         fprintf(stderr,"[ERROR]: cannot create %s! aborting\n", h_fname);
-        exit(1);
+        exit(-1);
     }
     if ((*cv_h_fptr = fopen(cv_h_fname, "w+")) == NULL) {
         fprintf(stderr,"[ERROR]: cannot create %s! aborting\n", cv_h_fname);
-        exit(1);
+        exit(-1);
     }
     if ((*cv_c_fptr = fopen(cv_c_fname, "w+")) == NULL) {
         fprintf(stderr,"[ERROR]: cannot create %s! aborting\n", cv_c_fname);
-        exit(1);
+        exit(-1);
     }
 }
 
 /**
  * Function to prepare standard generated files that will contain the source code for the
- * given message name;
+ * given message name.
  *
  * @param h_fptr header file containing the c structure of the message.
  * @param cv_h_fptr header file that will contain the declaration of convenience
  *        (de)serialization functions for the message.
- * @param cv_c_fptrm header file that will contain the implementation of convenience
+ * @param cv_c_fptr header file that will contain the implementation of convenience
  *        (de)serialization functions for the message.
  * @param message_name name of the message.
  */
@@ -359,6 +359,17 @@ prepare_standard_gen_files(FILE *h_fptr, FILE *cv_h_fptr, FILE *cv_c_fptr, char 
     fprintf(cv_h_fptr, "\n#include \"%s_set.h\"\n", message_name);
     fprintf(cv_h_fptr, "#include \"cerializer.h\"\n");
     fprintf(cv_h_fptr, "#include \"dynmessage.h\"\n");
+
+    fprintf(cv_h_fptr,
+        "\n/**\n"
+        " * Test whether the provided dynamicmessage represents a %s instance.\n"
+        " *\n"
+        " * @param dm reference to the dynamicmessage structure(not NULL).\n"
+        " *\n"
+        " * @return Non-zero if test succeeds, zero otherwise.\n"
+        " */\n"
+        "extern int\n"
+        "c_instance_of_%s(dynamicmessage *dm);\n", message_name, message_name);
 
     fprintf(cv_h_fptr,
         "\n/**\n"
@@ -425,6 +436,7 @@ prepare_standard_gen_files(FILE *h_fptr, FILE *cv_h_fptr, FILE *cv_c_fptr, char 
         "\n/**\n * Convenience functions to send/receive a serialized %s message.\n"
         " * Generated by crealizertool at %s */\n\n",
         message_name,  ctime(&timeval));
+    fprintf(cv_c_fptr, "#include <string.h>\n\n");
     fprintf(cv_c_fptr, "#include \"%s_set_c.h\"\n", message_name);
     fprintf(cv_c_fptr, "#include \"cerializer.h\"\n");
     fprintf(cv_c_fptr, "#include \"dynmessage.h\"\n");
@@ -432,12 +444,12 @@ prepare_standard_gen_files(FILE *h_fptr, FILE *cv_h_fptr, FILE *cv_c_fptr, char 
 }
 
 /**
- * Function to generate the implementation source code for the given message name;
+ * Function to generate the implementation source code for the given message name.
  *
  * @param h_fptr header file containing the c structure of the message.
- * @param cv_c_fptrm header file that will contain the implementation of convenience
+ * @param cv_c_fptr header file that will contain the implementation of convenience
  *        (de)serialization functions for the message.
- * @param message_info reference to message information structure
+ * @param message_info reference to message information structure.
  */
 static void
 generate_implementation(FILE *h_fptr, FILE *cv_c_fptr, message_info_struct *message_info) {
@@ -452,6 +464,29 @@ generate_implementation(FILE *h_fptr, FILE *cv_c_fptr, message_info_struct *mess
     fprintf(h_fptr, "} %s;\n", message_info->message_name);
 
     /* implementation of the convenience functions */
+    fprintf(cv_c_fptr,
+        "\n/**\n"
+        " * Test whether the provided dynamicmessage represents a %s instance.\n"
+        " *\n"
+        " * @param dm reference to the dynamicmessage structure(not NULL).\n"
+        " *\n"
+        " * @return Non-zero if test succeeds, zero otherwise.\n"
+        " */\n"
+        "extern int\n"
+        "c_instance_of_%s(dynamicmessage *dm){\n"
+    	"    int ret = 0;\n"
+        "\n"
+    	"    if (dm) {\n"
+    	"        if (dm->name) {\n"
+    	"            if (strcmp((const char *)dm->name, \"%s\") == 0) {\n"
+    	"                ret++;\n"
+    	"            }\n"
+    	"        }\n"
+    	"    }\n"
+    	"    return ret;\n"
+    	"}\n",
+    	message_info->message_name, message_info->message_name, message_info->message_name);
+
     fprintf(cv_c_fptr,
         "\n/**\n"
         " * Convenience function to serialize a %s message object\n"
@@ -469,18 +504,19 @@ generate_implementation(FILE *h_fptr, FILE *cv_c_fptr, message_info_struct *mess
         message_info->message_name, message_info->message_name,
         message_info->message_name, message_info->message_name,
         message_info->message_name);
-    fprintf(cv_c_fptr, "    if (object != NULL && serdi != NULL) {\n"
-                       "        dynamicmessage dm;\n"
-                       "        /* convert %s object to a dynamicmessage object */\n"
-                       "        if (c_conv_%s_2dm(object, &dm)) {\n"
-                       "            /* Serialize the '%s' dynamicmessage object */\n"
-                       "            dynmessage_serialize_bin((void *)&dm, serdi);\n"
-                       "            dynmessage_free(&dm);\n"
-                       "            if (serdi->ser_data != NULL) {\n"
-                       "                result++;\n"
-                       "            }\n"
-                       "        }\n"
-                       "    }\n",
+    fprintf(cv_c_fptr,
+        "    if (object != NULL && serdi != NULL) {\n"
+        "        dynamicmessage dm;\n"
+        "        /* convert %s object to a dynamicmessage object */\n"
+        "        if (c_conv_%s_2dm(object, &dm)) {\n"
+        "            /* Serialize the '%s' dynamicmessage object */\n"
+        "            dynmessage_serialize_bin((void *)&dm, serdi);\n"
+        "            dynmessage_free(&dm);\n"
+        "            if (serdi->ser_data != NULL) {\n"
+        "                result++;\n"
+        "            }\n"
+        "        }\n"
+        "    }\n",
         message_info->message_name, message_info->message_name,
         message_info->message_name);
     fprintf(cv_c_fptr, "    return (result);\n}\n");
@@ -504,17 +540,18 @@ generate_implementation(FILE *h_fptr, FILE *cv_c_fptr, message_info_struct *mess
         message_info->message_name,
         message_info->message_name,
         message_info->message_name);
-    fprintf(cv_c_fptr, "    if (object != NULL && edi != NULL) {\n"
-                       "        /* decode data into a dynamicmessage object */\n"
-                       "        dynamicmessage *dm = dynmessage_deserialize_bin(serdi->ser_data, serdi->ser_data_len);\n"
-                       "        if (sm) {\n"
-                       "            /* convert dynamicmessage object to a '%s' object */\n"
-                       "            if (c_conv_dm_2%s(dm, object)) {\n"
-                       "                result++;\n"
-                       "            }\n"
-                       "            dynamicmessage_destroy(sm);\n"
-                       "        }\n"
-                       "    }\n",
+    fprintf(cv_c_fptr,
+        "    if (object != NULL && serdi != NULL) {\n"
+        "        /* decode data into a dynamicmessage object */\n"
+        "        dynamicmessage *dm = dynmessage_deserialize_bin(serdi->ser_data, serdi->ser_data_len);\n"
+        "        if (dm) {\n"
+        "            /* convert dynamicmessage object to a '%s' object */\n"
+        "            if (c_conv_dm_2%s(dm, object)) {\n"
+        "                result++;\n"
+        "            }\n"
+        "            dynmessage_destroy(dm);\n"
+        "        }\n"
+        "    }\n",
         message_info->message_name, message_info->message_name);
     fprintf(cv_c_fptr, "    return (result);\n}\n");
 
@@ -556,8 +593,7 @@ generate_implementation(FILE *h_fptr, FILE *cv_c_fptr, message_info_struct *mess
                     message_info->field_names[i], message_info->field_types[i], message_info->field_names[i]);
             }
         }
-        fprintf(cv_c_fptr,
-            "        if (!error) {\n            result++;\n        }\n    }\n");
+        fprintf(cv_c_fptr, "        if (!error) {\n            result++;\n        }\n    }\n");
     }
     fprintf(cv_c_fptr, "    return (result);\n}\n");
 
@@ -602,12 +638,12 @@ generate_implementation(FILE *h_fptr, FILE *cv_c_fptr, message_info_struct *mess
 
 /**
  * Function to finalize standard generated files that will contain the source code for the
- * given message name;
+ * given message name.
  *
  * @param h_fptr header file containing the c structure of the message.
  * @param cv_h_fptr header file that will contain the declaration of convenience
  *        (de)serialization functions for the message.
- * @param cv_c_fptrm header file that will contain the implementation of convenience
+ * @param cv_c_fptr header file that will contain the implementation of convenience
  *        (de)serialization functions for the message.
  * @param message_name name of the message.
  */
@@ -621,12 +657,12 @@ finalize_standard_gen_files(FILE *h_fptr, FILE *cv_h_fptr, FILE *cv_c_fptr, char
 
 /**
  * Function to close standard generated files that will contain the source code for the
- * message;
+ * message.
  *
  * @param h_fptr header file containing the c structure of the message.
  * @param cv_h_fptr header file that will contain the declaration of convenience
  *        (de)serialization functions for the message.
- * @param cv_c_fptrm header file that will contain the implementation of convenience
+ * @param cv_c_fptr header file that will contain the implementation of convenience
  *        (de)serialization functions for the message.
  */
 static void
@@ -653,24 +689,24 @@ gen_source_set_from_string(char * cerializer_dmd_xml) {
         for (message = ezxml_child(cerializer_dmd, "message"); message; message = message->next) {
             FILE *h_fptr, *cv_h_fptr, *cv_c_fptr; /* set of generated files */
             message_info_struct message_info;
-            char * message_name; /* name of message */
+            char * message_name;
+            char * s;
             int i;
-            /* validate message name */
-            exit_if_null(ezxml_attr(message, "name"), "unspecified message name attribute!");
-            /* get a proper message name */
-            message_name = get_c_proper_name(ezxml_attr(message, "name"));
-
+            /* set message attributes */
+            exit_if_null((void *)ezxml_attr(message, "name"), "unspecified message name attribute!");
+            s = strdup(ezxml_attr(message, "name"));
+            message_name = get_c_proper_name(s);
+            free(s);
             message_info.message_name = message_name;
             message_info.field_names = NULL;
             message_info.field_types = NULL;
             message_info.field_count = 0;
-            /* open all files for writing */
+            /* prepare all files */
             open_standard_gen_files(&h_fptr, &cv_h_fptr, &cv_c_fptr, message_name);
-            /* prepare initially all files */
             prepare_standard_gen_files(h_fptr, cv_h_fptr, cv_c_fptr, message_name);
 #ifdef DEBUG
             fprintf(stdout, "processing message %s\n", ezxml_attr(message, "name"));
-#endif
+#endif /* DEBUG */
             for (field = ezxml_child(message, "field"); field; field = field->next) {
                 /* sanity checks */
                 if (ezxml_attr(field, "name") == NULL || ezxml_txt(field) == NULL) {
@@ -702,8 +738,10 @@ gen_source_set_from_string(char * cerializer_dmd_xml) {
 #ifdef DEBUG
                 fprintf(stdout, "adding field %s\n", ezxml_attr(field, "name"));
                 fprintf(stdout, "    of type %s\n", ezxml_txt(field));
-#endif
-                message_info.field_names[message_info.field_count] = get_c_proper_name(ezxml_attr(field, "name"));
+#endif /* DEBUG */
+                s = strdup(ezxml_attr(field, "name"));
+                message_info.field_names[message_info.field_count] = get_c_proper_name(s);
+                free(s);
                 message_info.field_types[message_info.field_count] = strdup(ezxml_txt(field));
                 message_info.field_count++;
             }
@@ -718,9 +756,8 @@ gen_source_set_from_string(char * cerializer_dmd_xml) {
                 free(message_info.field_names);
                 free(message_info.field_types);
             }
-            /* finalize at last all generated files */
+            /* finalize generated files */
             finalize_standard_gen_files(h_fptr, cv_h_fptr, cv_c_fptr, message_name);
-            /* close all generate files */
             close_standard_gen_files(h_fptr, cv_h_fptr, cv_c_fptr);
             free(message_name);
         }
@@ -751,7 +788,7 @@ generate_source_set_from_file(FILE * f_ptr) {
                     fprintf(stdout, "        type %s\n", ezxml_txt(field));
                 }
             }
-#endif
+#endif /* DEBUG */
             cerializer_dmd_xml_str = ezxml_toxml(cerializer_dmd);
             gen_source_set_from_string(cerializer_dmd_xml_str);
             free(cerializer_dmd_xml_str);
@@ -769,7 +806,6 @@ static void
 print_usage(char * tool_name) {
     fprintf(stdout, "usage: %s -f <filename>\n", tool_name);
     fprintf(stdout, "(version: 1.0.1)\n");
-
     exit(1);
 }
 
@@ -792,7 +828,7 @@ main(int argc, char ** argv) {
         }
     }
 
-    if (usage_error) { /* if command line arguments not valid print usage*/
+    if (usage_error) { /* if command line arguments not valid print usage */
         print_usage(argv[0]);
     } else {
         if ((f_ptr = fopen(fname_ptr, "r")) == NULL) {
@@ -803,7 +839,7 @@ main(int argc, char ** argv) {
             fclose(f_ptr);
         }
     }
-#endif
+#endif /* TEST */
     exit(0);
 }
 
@@ -841,4 +877,4 @@ test_gen_source_set(void) {
     free(dmd_str);
     ezxml_free(dmd);
 }
-#endif
+#endif  /* TEST */
