@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 /**
  * Utility program which generates c source code
  * assorted for the libcerializer library module. The
@@ -40,6 +39,8 @@
  * Allowed field types:
  * -----------------------------------------------------
  * ENUMERATION_TYPE
+ * INT8_TYPE
+ * UNSIGNED_INT8_TYPE
  * INT16_TYPE
  * UNSIGNED_INT16_TYPE
  * INT32_TYPE
@@ -58,13 +59,13 @@
 
 #include "ezxml.h"
 
-#define H_SET_FNAME_POST_FIX "_set.h"
+#define H_SET_FNAME_POST_FIX "_set_h"
 #define H_SET_FNAME_POST_FIX_LEN 6
 
-#define CV_H_SET_FNAME_POST_FIX  "_set_c.h"
+#define CV_H_SET_FNAME_POST_FIX  "_set_c_h"
 #define CV_H_SET_FNAME_POST_FIX_LEN 8
 
-#define CV_C_SET_FNAME_POST_FIX  "_set_c.c"
+#define CV_C_SET_FNAME_POST_FIX  "_set_c_c"
 #define CV_C_SET_FNAME_POST_FIX_LEN 8
 
 #ifdef TEST
@@ -86,6 +87,8 @@ typedef struct _message_info_struct_ {
 /* allowed field value types (enumerated representation) */
 typedef enum _allowed_value_types {
     ENUMERATION_TYPE,
+    INT8_TYPE,
+    UNSIGNED_INT8_TYPE,
     INT16_TYPE,
     UNSIGNED_INT16_TYPE,
     INT32_TYPE,
@@ -100,6 +103,8 @@ typedef enum _allowed_value_types {
 /* allowed field value types (string representation) */
 static char * allowed_value_types_text[] = {
     "ENUMERATION_TYPE",
+    "INT8_TYPE",
+    "UNSIGNED_INT8_TYPE",
     "INT16_TYPE",
     "UNSIGNED_INT16_TYPE",
     "INT32_TYPE",
@@ -114,6 +119,8 @@ static char * allowed_value_types_text[] = {
 /* allowed field value types (c type representation) */
 static char * allowed_value_types_ctype[] = {
     "unsigned int",
+    "char",
+    "unsigned char",
     "int",
     "int",
     "int",
@@ -128,6 +135,8 @@ static char * allowed_value_types_ctype[] = {
 /* allowed field value types (c union value representation) */
 static char * allowed_value_types_cunion[] = {
     "enum_value",
+    "int8_value",
+    "uint8_value",
     "int16_value",
     "uint16_value",
     "int32_value",
@@ -199,7 +208,7 @@ static int
 valid_field_value_type(char * field_value_type) {
     int result = 0;
     int i;
-    for (i=0;i<10;i++) {
+    for (i=0;i<12;i++) {
         if (strcmp(allowed_value_types_text[i], field_value_type) == 0) {
             result++;
             break;
@@ -217,7 +226,7 @@ valid_field_value_type(char * field_value_type) {
 static char *
 get_field_value_type_text(char * field_value_type) {
     int i;
-    for (i=0;i<10;i++) {
+    for (i=0;i<12;i++) {
         if (strcmp(allowed_value_types_text[i], field_value_type) == 0) {
             return(allowed_value_types_ctype[i]);
         }
@@ -236,7 +245,7 @@ get_field_value_type_text(char * field_value_type) {
 static char *
 get_field_value_type_union_text(char * field_value_type) {
     int i;
-    for (i=0;i<10;i++) {
+    for (i=0;i<12;i++) {
         if (strcmp(allowed_value_types_text[i], field_value_type) == 0) {
             return(allowed_value_types_cunion[i]);
         }
@@ -267,6 +276,7 @@ get_c_proper_name(char * user_prov_name) {
 
     for (i=0; i<strlen(user_prov_name); i++) {
         if (j == 0) { /* first letter should be an alphabet letter */
+            /* TODO: allow first letter to be '_' */
             if (is_alpha(user_prov_name[i])) {
                 proper_name[j++] = user_prov_name[i];
             }
@@ -394,7 +404,7 @@ prepare_standard_gen_files(FILE *h_fptr, FILE *cv_h_fptr, FILE *cv_c_fptr, char 
         " * @param serdi reference to the serialized_data_info structure(not NULL)\n"
         " *        containing the serialized %s message object.\n"
         " * @param object reference to the deserialized %s message(not NULL).\n"
-  		" *\n"
+          " *\n"
         " * @return Non-zero upon successful de-serialization, zero otherwise.\n"
         " */\n"
         "extern int\n"
@@ -463,7 +473,6 @@ generate_implementation(FILE *h_fptr, FILE *cv_c_fptr, message_info_struct *mess
     }
     fprintf(h_fptr, "} %s;\n", message_info->message_name);
 
-    /* implementation of the convenience functions */
     fprintf(cv_c_fptr,
         "\n/**\n"
         " * Test whether the provided dynamicmessage represents a %s instance.\n"
@@ -474,18 +483,47 @@ generate_implementation(FILE *h_fptr, FILE *cv_c_fptr, message_info_struct *mess
         " */\n"
         "extern int\n"
         "c_instance_of_%s(dynamicmessage *dm){\n"
-    	"    int ret = 0;\n"
+        "    int ret = 0;\n"
         "\n"
-    	"    if (dm) {\n"
-    	"        if (dm->name) {\n"
-    	"            if (strcmp((const char *)dm->name, \"%s\") == 0) {\n"
-    	"                ret++;\n"
-    	"            }\n"
-    	"        }\n"
-    	"    }\n"
-    	"    return ret;\n"
-    	"}\n",
-    	message_info->message_name, message_info->message_name, message_info->message_name);
+        "    if (dm) {\n"
+        "        if (dm->name) {\n"
+        "            if (strcmp((const char *)dm->name, \"%s\") == 0\n"
+        "                && dm->field_count > 0) {\n"
+        "                ret++;\n"
+        "            }\n"
+        "            if (ret) {\n"
+        "                ret = dm->field_count == %d;\n"
+        "            }\n",
+        message_info->message_name, message_info->message_name,
+        message_info->message_name, message_info->field_count);
+    if (message_info->field_count > 0) {
+        fprintf(cv_c_fptr,
+            "            if (ret) {\n"
+            "                dyn_field field;\n"
+            "                int error = 0;\n\n"
+            "                ret = 0;\n");
+
+        for (i=0; i<message_info->field_count; i++) {
+            fprintf(cv_c_fptr,
+            "                dynmessage_get_field(dm, \"%s\", &field);\n",
+            message_info->field_names[i]);
+            fprintf(cv_c_fptr,
+            "                if (field.seq == -1) {\n"
+            "                    error++;\n"
+            "                }\n");
+        }
+        fprintf(cv_c_fptr,
+            "                if (!error) {\n"
+            "                    ret++;\n"
+            "                }\n");
+           fprintf(cv_c_fptr,
+            "            }\n");
+    }
+    fprintf(cv_c_fptr,
+            "        }\n"
+            "    }\n"
+            "    return ret;\n"
+            "}\n");
 
     fprintf(cv_c_fptr,
         "\n/**\n"
@@ -529,7 +567,7 @@ generate_implementation(FILE *h_fptr, FILE *cv_c_fptr, message_info_struct *mess
         " * @param serdi reference to the serialized_data_info structure(not NULL)\n"
         " *        containing the serialized %s message object.\n"
         " * @param object reference to the deserialized %s message(not NULL).\n"
-  		" *\n"
+          " *\n"
         " * @return Non-zero upon successful de-serialization, zero otherwise.\n"
         " */\n"
         "extern int\n"
@@ -576,6 +614,13 @@ generate_implementation(FILE *h_fptr, FILE *cv_c_fptr, message_info_struct *mess
     if (message_info->field_count > 0) {
         fprintf(cv_c_fptr, "    if (object != NULL && dm != NULL) {\n");
         fprintf(cv_c_fptr, "        int error = 0;\n");
+        /* do we need to declare a long value ? */
+        for (i=0; i<message_info->field_count; i++) {
+        	if (strcmp(message_info->field_types[i], "INT32_TYPE") == 0) {
+                fprintf(cv_c_fptr, "        long long_value = 0L;\n");
+        		break;
+        	}
+        }
         fprintf(cv_c_fptr, "        dynmessage_init(dm, \"%s\");\n", message_info->message_name);
         for (i=0; i<message_info->field_count; i++) {
             if (strcmp(message_info->field_types[i], "STRING_TYPE") == 0) {
@@ -587,13 +632,24 @@ generate_implementation(FILE *h_fptr, FILE *cv_c_fptr, message_info_struct *mess
                     "            dynmessage_put_field_and_value(dm, \"%s\", %s, object->%s);\n",
                     message_info->field_names[i], message_info->field_types[i], message_info->field_names[i]);
                 fprintf(cv_c_fptr, "        }\n");
+            } else if (strcmp(message_info->field_types[i], "INT32_TYPE") == 0) {
+                fprintf(cv_c_fptr,
+                    "        long_value = object->%s;\n"
+                    "        dynmessage_put_field_and_value(dm, \"%s\",\n"
+                    "            %s, &long_value);\n",
+                    message_info->field_names[i], message_info->field_names[i], message_info->field_types[i]);
             } else {
                 fprintf(cv_c_fptr,
                     "        dynmessage_put_field_and_value(dm, \"%s\", %s, &object->%s);\n",
                     message_info->field_names[i], message_info->field_types[i], message_info->field_names[i]);
             }
         }
-        fprintf(cv_c_fptr, "        if (!error) {\n            result++;\n        }\n    }\n");
+        fprintf(cv_c_fptr,
+                     "        if (error) {\n"
+                     "            dynmessage_free(dm);\n"
+                     "        } else {\n"
+                     "            result++;\n"
+                     "        }\n    }\n");
     }
     fprintf(cv_c_fptr, "    return (result);\n}\n");
 
@@ -616,22 +672,18 @@ generate_implementation(FILE *h_fptr, FILE *cv_c_fptr, message_info_struct *mess
         message_info->message_name);
     if (message_info->field_count > 0) {
         fprintf(cv_c_fptr,
-            "    if (object != NULL && dm != NULL) {\n"
-            "        dyn_field field;\n"
-            "        int error = 0;\n");
+            "    if (object != NULL && dm != NULL && c_instance_of_%s(dm)) {\n"
+            "        dyn_field field;\n", message_info->message_name);
+
         for (i=0; i<message_info->field_count; i++) {
             fprintf(cv_c_fptr, "        dynmessage_get_field(dm, \"%s\", &field);\n",
                 message_info->field_names[i]);
-            fprintf(cv_c_fptr, "        if (field.seq == -1) {\n"
-                               "            error++;\n"
-                               "        } else {\n");
-            fprintf(cv_c_fptr, "            object->%s = field.value->%s;\n",
+            fprintf(cv_c_fptr, "        object->%s = field.value->%s;\n",
                 message_info->field_names[i],
                 get_field_value_type_union_text(message_info->field_types[i]));
-            fprintf(cv_c_fptr, "        }\n");
         }
         fprintf(cv_c_fptr,
-            "        if (!error) {\n            result++;\n        }\n    }\n");
+            "        result++;\n    }\n");
     }
     fprintf(cv_c_fptr, "    return (result);\n}\n");
 }
@@ -713,7 +765,9 @@ gen_source_set_from_string(char * cerializer_dmd_xml) {
                     continue;
                 }
                 if (!valid_field_value_type(ezxml_txt(field))) {
-                    continue;
+                    fprintf(stderr, "warning: ignoring field %s of unknown type %s!\n",
+                        ezxml_attr(field, "name"), ezxml_txt(field));
+                	continue;
                 }
                 if (message_info.field_names == NULL) {
                     message_info.field_names = (char **)malloc(sizeof(char *));
