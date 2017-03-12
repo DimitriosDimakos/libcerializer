@@ -55,6 +55,8 @@
 /* sizes to use for serialized field values (fixed for now) */
 static const size_t DYN_FIELD_TYPE_SER_SIZE[DYN_FIELD_TYPE_LEN] = {
   4,      /* ENUMERATION_TYPE        */
+  1,      /* INT8_TYPE               */
+  1,      /* UNSIGNED_INT8_TYPE      */
   2,      /* SHORT_INT_TYPE          */
   2,      /* UNSIGNED_SHORT_INT_TYPE */
   4,      /* INT_TYPE                */
@@ -207,6 +209,8 @@ dynmessage_deserialize_bin(unsigned char *data, int data_len) {
               unsigned char *field_name = NULL;
               dyn_field_type field_type;
               unsigned char *field_value_buffer = NULL;
+              char char_value;
+              unsigned char uchar_value;
               short short_value;
               int int_value;
               long long_value;
@@ -246,6 +250,14 @@ dynmessage_deserialize_bin(unsigned char *data, int data_len) {
               case ENUMERATION_TYPE: /* 4 bytes */
                   int_value = deserialize_int32(field_value_buffer);
                   dynmessage_put_enum_field_value(dyn_message, (char *)field_name, &int_value);
+                  break;
+              case INT8_TYPE: /* 1 byte */
+            	  char_value = *((char *)field_value_buffer);
+                  dynmessage_put_int8_field_value(dyn_message, (char *)field_name, &char_value);
+                  break;
+              case UNSIGNED_INT8_TYPE: /* 1 byte */
+            	  uchar_value = *field_value_buffer;
+                  dynmessage_put_uint8_field_value(dyn_message, (char *)field_name, &uchar_value);
                   break;
               case INT16_TYPE: /* 2 bytes */
                   short_value = deserialize_int16(field_value_buffer);
@@ -370,6 +382,12 @@ dynmessage_serialize_bin(void *object, serialized_data_info *serdi) {
         switch(field->type) {
         case ENUMERATION_TYPE: /* 4 bytes */
             serialize_int32(data, (field->value->enum_value));
+            break;
+        case INT8_TYPE: /* 1 byte */
+        	*data = (unsigned char)field->value->int8_value;
+            break;
+        case UNSIGNED_INT8_TYPE: /* 1 byte */
+        	*data = field->value->uint8_value;
             break;
         case INT16_TYPE: /* 2 bytes */
             serialize_int16(data, (field->value->int16_value));

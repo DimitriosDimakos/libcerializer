@@ -14,6 +14,10 @@
  * limitations under the License.
  */
 
+/**
+ * Simple logging module with log control to log statements on screen.
+ */
+
 #include <stdio.h>
 #include <stdarg.h>
 #include <string.h>

@@ -78,6 +78,12 @@ update_field_value(
     case ENUMERATION_TYPE:
         value_to_store->enum_value = *(unsigned int *)value;
         break;
+    case INT8_TYPE:
+        value_to_store->int8_value = *(char *)value;
+        break;
+    case UNSIGNED_INT8_TYPE:
+        value_to_store->uint8_value = *(unsigned char *)value;
+        break;
     case INT16_TYPE:
         value_to_store->int16_value = *(int *)value;
         break;

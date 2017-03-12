@@ -28,6 +28,8 @@ extern "C" {
 /* Useful macros */
 #define dynmessage_put_field(message, name, type) dynmessage_put_field_and_value(message, name, type, NULL)
 #define dynmessage_put_enum_field_value(message, name, value) dynmessage_put_field_and_value(message, name, ENUMERATION_TYPE, value)
+#define dynmessage_put_int8_field_value(message, name, value) dynmessage_put_field_and_value(message, name, INT8_TYPE, value)
+#define dynmessage_put_uint8_field_value(message, name, value) dynmessage_put_field_and_value(message, name, UNSIGNED_INT8_TYPE, value)
 #define dynmessage_put_int16_field_value(message, name, value) dynmessage_put_field_and_value(message, name, INT16_TYPE, value)
 #define dynmessage_put_uint16_field_value(message, name, value) dynmessage_put_field_and_value(message, name, UNSIGNED_INT16_TYPE, value)
 #define dynmessage_put_int32_field_value(message, name, value) dynmessage_put_field_and_value(message, name, INT32_TYPE, value)
@@ -38,11 +40,13 @@ extern "C" {
 #define dynmessage_put_float64_field_value(message, name, value) dynmessage_put_field_and_value(message, name, FLOAT64_TYPE, value)
 #define dynmessage_put_string_field_value(message, name, value) dynmessage_put_field_and_value(message, name, STRING_TYPE, value)
 
-#define DYN_FIELD_TYPE_LEN 11
+#define DYN_FIELD_TYPE_LEN 13
 
 /* Enumeration that describes the available types of a dynamic message field.*/
 typedef enum _dyn_field_type {
     ENUMERATION_TYPE,    /* use unsigned int */
+    INT8_TYPE,           /* use char */
+    UNSIGNED_INT8_TYPE,  /* use unsigned char */
     INT16_TYPE,          /* use int */
     UNSIGNED_INT16_TYPE, /* use unsigned int */
     INT32_TYPE,          /* use int, long (depending on system) */
@@ -58,6 +62,8 @@ typedef enum _dyn_field_type {
 /* Union to store dynamic message field value */
 typedef union _dyn_field_value_union {
     unsigned int enum_value;
+    char int8_value;
+    unsigned char uint8_value;
     int int16_value;
     unsigned int uint16_value;
     long int32_value;
